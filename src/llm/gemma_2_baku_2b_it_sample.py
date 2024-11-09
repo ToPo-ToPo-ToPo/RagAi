@@ -1,6 +1,7 @@
 
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from langchain.llms import HuggingFacePipeline
+from langchain_community.llms import HuggingFacePipeline
+#from langchain.llms import HuggingFacePipeline
 from transformers import pipeline
 
 model_name = "rinna/gemma-2-baku-2b-it"
