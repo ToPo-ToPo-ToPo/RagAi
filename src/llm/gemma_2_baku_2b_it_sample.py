@@ -1,17 +1,27 @@
-
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from langchain_community.llms import HuggingFacePipeline
-#from langchain.llms import HuggingFacePipeline
+import platform
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import BitsAndBytesConfig # 量子化によるコスト低減
 from transformers import pipeline
+from langchain_community.llms import HuggingFacePipeline
 
 model_name = "rinna/gemma-2-baku-2b-it"
-quantization_config = BitsAndBytesConfig(load_in_8bit=True)
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    quantization_config=quantization_config
-)
+
+system_name = platform.system()
+if system_name == 'Windows':
+    # 量子化によるコスト低減の設定
+    quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+    # モデルの設定
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        quantization_config=quantization_config 
+    )
+    
+elif system_name == 'Darwin':
+	model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+    )
 
 pipe = pipeline(
     'text-generation',
