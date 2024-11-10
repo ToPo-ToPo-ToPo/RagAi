@@ -37,45 +37,103 @@ from langchain.prompts import PromptTemplate
 from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema import StrOutputParser
 
-base_template = '''
+# プロンプトを準備
+template = """
 <bos><start_of_turn>user
-{question}
+{query}
 <end_of_turn><start_of_turn>model
-'''
+"""
+prompt = PromptTemplate.from_template(template)
 
-qa_chain = (
-    {'question': RunnablePassthrough()}
-    | PromptTemplate.from_template(base_template)
+# チェーンを準備
+chain = (
+    prompt
     | local_llm
-    | StrOutputParser()
 )
-res = qa_chain.invoke('日本で一番高い山の名前と標高は何ですか？')
-print(res)
+
+# 推論を実行
+query = "なごや個人開発者の集いとは何ですか。"
+answer = chain.invoke({'query':query})
+print(answer)
 
 #-----------------------------------------
 # VectorDB構築
 #-----------------------------------------
-from langchain.indexes import VectorstoreIndexCreator
-import langchain_community.document_loaders
-import langchain.text_splitter
-
+from langchain_community.document_loaders import SeleniumURLLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 urls = [
-    'https://www.haw.co.jp/',
+    'https://758indies.connpass.com/',
     ...
 ]
-docs = langchain_community.document_loaders.UnstructuredURLLoader(urls=urls).load()
+
+#
+#docs = langchain_community.document_loaders.UnstructuredURLLoader(urls=urls).load()
+
+# Seleniumを使う場合
+loader = SeleniumURLLoader(
+    urls=urls
+)
+docs = loader.load()
 
 # チャンクの分割
-text_splitter = langchain.text_splitter.RecursiveCharacterTextSplitter(
+text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=100,  # チャンクの最大文字数
     chunk_overlap=10,  # オーバーラップの最大文字数
 )
+docs = text_splitter.split_documents(docs)
 
-# VectorDB構築
-vectorstore = FAISS.from_documents(
-    docs, 
-    embedding=HuggingFaceEmbeddings(
-        model_name='intfloat/multilingual-e5-base'
-    )
+import langchain.vectorstores
+import langchain.embeddings
+
+# ベクトル化する準備
+embedding = langchain.embeddings.HuggingFaceEmbeddings(
+    model_name="intfloat/multilingual-e5-base"
 )
+
+# 読込した内容を保存
+vectorstore = langchain.vectorstores.Chroma.from_documents(
+    documents=docs,
+    embedding=embedding
+)
+
+# 検索する文章
+query = "なごや個人開発者の集いとは何ですか。"
+
+# 検索する
+docs = vectorstore.similarity_search(query=query, k=5)
+# 検索結果の一覧を表示
+#for index, doc in enumerate(docs):
+#    print("%d:" % (index + 1))
+#    print(doc.page_content)
+
+#------------------------------------------------------------
+# RAGを使って生成をする
+#------------------------------------------------------------
+# プロンプトを準備
+template = """
+<bos><start_of_turn>system
+次の文脈を使用して、最後の質問に答えてください。
+{context}
+<end_of_turn><start_of_turn>user
+{query}
+<end_of_turn><start_of_turn>model
+"""
+prompt = PromptTemplate.from_template(template)
+
+# チェーンを準備
+chain = (
+    prompt
+    | local_llm
+)
+
+# 質問を入力
+query = "なごや個人開発者の集いとは何ですか。"
+
+# 検索して関連する文脈を作成
+docs = vectorstore.similarity_search(query=query, k=5)
+content = "\n".join([f"Content:\n{doc.page_content}" for doc in docs])
+
+# 推論を実行
+answer = chain.invoke({'query':query, 'context':content})
+print(answer)
