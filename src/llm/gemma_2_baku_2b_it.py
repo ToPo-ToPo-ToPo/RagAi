@@ -1,0 +1,125 @@
+
+# モデルの定義関係
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import BitsAndBytesConfig # 量子化によるコスト低減
+from transformers import pipeline
+from langchain_huggingface import HuggingFacePipeline
+# Promptの定義関係
+from langchain.prompts import PromptTemplate
+#------------------------------------------------------------------------------------------------
+# gemma-2-baku-2b-itのモデルを管理するクラス
+#------------------------------------------------------------------------------------------------
+class Gemma2Baku2bIt:
+    
+    #----------------------------------------------------------------------
+    # コンストラクタ
+    #----------------------------------------------------------------------
+    def __init__(self, device_map, dtype, load_in_8bit=False, load_in_4bit=False) -> None:
+        
+        # モデル名の設定
+        model_name = "rinna/gemma-2-baku-2b-it"
+        
+        # トークナイザーの設定
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        # 量子化によるコスト低減の設定
+        quantization_config = BitsAndBytesConfig(
+            load_in_8bit=load_in_8bit,
+            load_in_4bit=load_in_4bit
+        )
+
+        # モデルの設定
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map=device_map,
+            torch_dtype=dtype,
+            quantization_config=quantization_config
+        )
+
+        # パイプラインの作成
+        pipe = pipeline(
+            'text-generation',
+            model=model,
+            tokenizer=tokenizer,
+            max_new_tokens=200,
+        )
+        
+        # モデルを生成
+        self.llm = HuggingFacePipeline(pipeline=pipe)
+    
+    #----------------------------------------------------------------------
+    # プロンプトの定義
+    #----------------------------------------------------------------------
+    def generate_prompt(self):
+        
+        # プロンプトのテンプレートを設定
+        template = """
+        <bos><start_of_turn>user
+        {query}
+        <end_of_turn><start_of_turn>model
+        """
+
+        # プロンプトを定義
+        prompt = PromptTemplate.from_template(template)
+
+        #
+        return prompt
+    
+    #----------------------------------------------------------------------
+    # RAG用のプロンプトの定義
+    #----------------------------------------------------------------------
+    def generate_prompt_with_rag(self):
+        
+        # プロンプトのテンプレートを設定
+        template = """
+        <bos><start_of_turn>system
+        次の文脈を使用して、最後の質問に答えてください。
+        {context}
+        <end_of_turn><start_of_turn>user
+        {query}
+        <end_of_turn><start_of_turn>model
+        """
+        
+        # プロンプトを定義
+        prompt = PromptTemplate.from_template(template)
+
+        #
+        return prompt
+    
+    #----------------------------------------------------------------------
+    # 会話用のChainを作成
+    #----------------------------------------------------------------------
+    def make_chain(self, prompt):
+        
+        #
+        chain = (
+            prompt
+            | self.llm
+        )
+
+        #
+        return chain
+    
+    #----------------------------------------------------------------------
+    # 入力された質問に対する回答を生成
+    #----------------------------------------------------------------------
+    def response(self, chain, query):
+
+        # 推論を実行
+        answer = chain.invoke({'query':query})
+        return answer
+    
+    #----------------------------------------------------------------------
+    # 入力された質問に対する回答を生成
+    #----------------------------------------------------------------------
+    def response_with_rag(self, chain, vector_db, query):
+
+        # 検索して関連する文脈を作成
+        docs = vector_db.similarity_search(query=query, k=5)
+        content = "\n".join([f"Content:\n{doc.page_content}" for doc in docs])
+
+        # 推論を実行
+        answer = chain.invoke({'query':query, 'context':content})
+        return answer
+
+
