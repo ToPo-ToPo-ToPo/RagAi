@@ -24,5 +24,5 @@ if __name__ == '__main__':
     chain = llm.make_chain(prompt=prompt)
 
     # 回答を生成
-    answer = llm.response(chain=chain, query="トポロジー最適化の代表的な手法は何？")
+    answer = llm.response(chain=chain, query="あなたは、人気配信者のニャン太です。トポロジー最適化の代表的な手法は何？")
     print(answer)

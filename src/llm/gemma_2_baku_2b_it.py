@@ -33,6 +33,7 @@ class Gemma2Baku2bIt:
             model_name,
             device_map=device_map,
             torch_dtype=dtype,
+            attn_implementation="eager",
             quantization_config=quantization_config
         )
 
@@ -54,8 +55,7 @@ class Gemma2Baku2bIt:
         
         # プロンプトのテンプレートを設定
         template = """
-        <bos><start_of_turn>user
-        {query}<end_of_turn>
+        <bos><start_of_turn>user{query}<end_of_turn>
         <start_of_turn>model
         """
 
@@ -74,10 +74,10 @@ class Gemma2Baku2bIt:
         template = """
         <bos><start_of_turn>system
         次の文脈を使用して、最後の質問に答えてください。
-        {context}
-        <end_of_turn><start_of_turn>user
-        {query}
-        <end_of_turn><start_of_turn>model
+        {context}<end_of_turn>
+        <start_of_turn>user
+        {query}<end_of_turn>
+        <start_of_turn>model
         """
         
         # プロンプトを定義
