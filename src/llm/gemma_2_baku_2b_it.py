@@ -38,10 +38,10 @@ class Gemma2Baku2bIt:
 
         # パイプラインの作成
         pipe = pipeline(
-            'text-generation',
+            task='text-generation',
             model=model,
             tokenizer=tokenizer,
-            max_new_tokens=200,
+            max_new_tokens=2048,
         )
         
         # モデルを生成
@@ -55,8 +55,8 @@ class Gemma2Baku2bIt:
         # プロンプトのテンプレートを設定
         template = """
         <bos><start_of_turn>user
-        {query}
-        <end_of_turn><start_of_turn>model
+        {query}<end_of_turn>
+        <start_of_turn>model
         """
 
         # プロンプトを定義
