@@ -6,6 +6,8 @@ from transformers import pipeline
 from langchain_huggingface import HuggingFacePipeline
 # Promptの定義関係
 from langchain.prompts import PromptTemplate
+#
+from langchain_core.output_parsers import StrOutputParser
 #------------------------------------------------------------------------------------------------
 # gemma-2-baku-2b-itのモデルを管理するクラス
 #------------------------------------------------------------------------------------------------
@@ -23,10 +25,10 @@ class Gemma2Baku2bIt:
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         # 量子化によるコスト低減の設定
-        quantization_config = BitsAndBytesConfig(
-            load_in_8bit=load_in_8bit,
-            load_in_4bit=load_in_4bit
-        )
+        #quantization_config = BitsAndBytesConfig(
+        #    load_in_8bit=load_in_8bit,
+        #    load_in_4bit=load_in_4bit
+        #)
 
         # モデルの設定
         model = AutoModelForCausalLM.from_pretrained(
@@ -34,7 +36,7 @@ class Gemma2Baku2bIt:
             device_map=device_map,
             torch_dtype=dtype,
             attn_implementation="eager",
-            quantization_config=quantization_config
+            #quantization_config=quantization_config
         )
 
         # パイプラインの作成
@@ -55,7 +57,8 @@ class Gemma2Baku2bIt:
         
         # プロンプトのテンプレートを設定
         template = """
-        <bos><start_of_turn>user{query}<end_of_turn>
+        <bos><start_of_turn>user
+        {query}<end_of_turn>
         <start_of_turn>model
         """
 
@@ -92,10 +95,10 @@ class Gemma2Baku2bIt:
     def make_chain(self, prompt):
         
         #
-        chain = (
-            prompt
-            | self.llm
-        )
+        parser = StrOutputParser()
+        
+        #
+        chain = prompt | self.llm | parser
 
         #
         return chain
@@ -106,7 +109,7 @@ class Gemma2Baku2bIt:
     def response(self, chain, query):
 
         # 推論を実行
-        answer = chain.invoke({'query':query})
+        answer = chain.invoke({"query": query})
         return answer
     
     #----------------------------------------------------------------------
