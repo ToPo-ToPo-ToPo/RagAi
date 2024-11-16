@@ -25,10 +25,10 @@ class Gemma2Baku2bIt:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         # 量子化によるコスト低減の設定
-        quantization_config = BitsAndBytesConfig(
-            load_in_8bit=load_in_8bit,
-            load_in_4bit=load_in_4bit
-        )
+        #quantization_config = BitsAndBytesConfig(
+        #    load_in_8bit=load_in_8bit,
+        #    load_in_4bit=load_in_4bit
+        #)
 
         # モデルの設定
         model = AutoModelForCausalLM.from_pretrained(
@@ -36,7 +36,7 @@ class Gemma2Baku2bIt:
             device_map=device_map,
             torch_dtype=dtype,
             attn_implementation="eager",
-            quantization_config=quantization_config
+            #quantization_config=quantization_config
         )
 
         # パイプラインの作成
@@ -55,6 +55,7 @@ class Gemma2Baku2bIt:
     #----------------------------------------------------------------------
     def generate_prompt(self):
         
+<<<<<<< HEAD
         #
         question_prompt_template_format = self.tokenizer.apply_chat_template(
             conversation = [
@@ -64,6 +65,15 @@ class Gemma2Baku2bIt:
             add_generation_prompt=True
         )
         
+=======
+        # プロンプトのテンプレートを設定
+        template = """
+        <bos><start_of_turn>user
+        {query}<end_of_turn>
+        <start_of_turn>model
+        """
+
+>>>>>>> 223bd1897fce07c02c2048accd3c293e6174aca6
         # プロンプトを定義
         prompt = PromptTemplate(
             template=question_prompt_template_format,
@@ -104,7 +114,14 @@ class Gemma2Baku2bIt:
     def make_chain(self, prompt):
         
         #
+<<<<<<< HEAD
         chain = prompt | self.llm | StrOutputParser()
+=======
+        parser = StrOutputParser()
+        
+        #
+        chain = prompt | self.llm | parser
+>>>>>>> 223bd1897fce07c02c2048accd3c293e6174aca6
 
         #
         return chain
@@ -115,7 +132,11 @@ class Gemma2Baku2bIt:
     def response(self, chain, query):
 
         # 推論を実行
+<<<<<<< HEAD
         answer = chain.invoke(query)
+=======
+        answer = chain.invoke({"query": query})
+>>>>>>> 223bd1897fce07c02c2048accd3c293e6174aca6
         return answer
     
     #----------------------------------------------------------------------

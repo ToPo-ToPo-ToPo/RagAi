@@ -1,4 +1,5 @@
 
+import platform
 import torch
 from gemma_2_baku_2b_it import Gemma2Baku2bIt
 #======================================================================
@@ -7,9 +8,16 @@ from gemma_2_baku_2b_it import Gemma2Baku2bIt
 if __name__ == '__main__':
 
     # 条件設定
-    device_map = "auto"
-    #dtype = torch.float32
-    dtype = torch.bfloat16
+    system_name = platform.system()
+    if system_name == 'Windows':
+        device_map = "auto"
+        #dtype = torch.float32
+        dtype = torch.bfloat16
+        
+    elif system_name == 'Darwin':
+        device_map = "mps"
+        #dtype = torch.float32
+        dtype = torch.bfloat16
 
     # モデルを生成
     llm = Gemma2Baku2bIt(
@@ -19,6 +27,7 @@ if __name__ == '__main__':
 
     # プロンプトを作成
     prompt = llm.generate_prompt()
+    print(prompt)
 
     # Chainを作成
     chain = llm.make_chain(prompt=prompt)
