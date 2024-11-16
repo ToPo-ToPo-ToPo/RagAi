@@ -55,20 +55,14 @@ class Gemma2Baku2bIt:
     #----------------------------------------------------------------------
     def generate_prompt(self):
         
-        #
-        question_prompt_template_format = self.tokenizer.apply_chat_template(
-            conversation = [
-                {"role": "user", "content": "{query}"}
-            ], 
-            tokenize=False, 
-            add_generation_prompt=True
-        )
+        template = """
+        <bos><start_of_turn>user
+        {query}<end_of_turn>
+        <start_of_turn>model
+        """
         
         # プロンプトを定義
-        prompt = PromptTemplate(
-            template=question_prompt_template_format,
-            input_variables=["query"]
-        )
+        prompt = PromptTemplate.from_template(template)
 
         #
         return prompt
@@ -77,24 +71,20 @@ class Gemma2Baku2bIt:
     # RAG用のプロンプトの定義
     #----------------------------------------------------------------------
     def generate_prompt_with_rag(self):
-
-        #
-        question_prompt_template_format = self.tokenizer.apply_chat_template(
-            conversation = [
-                {"role": "user", "content": "次の文脈を使用して、最後の質問に答えてください。\n{context}"},
-                {"role": "system", "content": "わかりました。"},
-                {"role": "user", "content": "{query}"}
-            ], 
-            tokenize=False, 
-            add_generation_prompt=True
-        )
-
-        # プロンプトを定義
-        prompt = PromptTemplate(
-            template=question_prompt_template_format,
-            input_variables=["context", "query"]
-        )
         
+        # プロンプトのテンプレートを設定
+        template = """
+        <bos><start_of_turn>system
+        次の文脈を使用して、最後の質問に答えてください。
+        {context}<end_of_turn>
+        <start_of_turn>user
+        {query}<end_of_turn>
+        <start_of_turn>model
+        """
+        
+        # プロンプトを定義
+        prompt = PromptTemplate.from_template(template)
+
         #
         return prompt
     
@@ -115,26 +105,17 @@ class Gemma2Baku2bIt:
     def response(self, chain, query):
 
         # 推論を実行
-        answer = chain.invoke(query)
+        answer = chain.invoke({'query':query})
         return answer
     
     #----------------------------------------------------------------------
     # 入力された質問に対する回答を生成
     #----------------------------------------------------------------------
-    '''def response_with_rag(self, chain, vector_db, query):
+    def response_with_rag(self, chain, vector_db, query):
 
         # 検索して関連する文脈を作成
         docs = vector_db.similarity_search(query=query, k=5)
         content = "\n".join([f"Content:\n{doc.page_content}" for doc in docs])
-
-        # 推論を実行
-        answer = chain.invoke({'query':query, 'context':content})
-        return answer'''
-    def response_with_rag(self, chain, content, query):
-
-        # 検索して関連する文脈を作成
-        #docs = vector_db.similarity_search(query=query, k=5)
-        #content = "\n".join([f"Content:\n{doc.page_content}" for doc in docs])
 
         # 推論を実行
         answer = chain.invoke({'query':query, 'context':content})
