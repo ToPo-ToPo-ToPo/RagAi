@@ -82,6 +82,7 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_overlap=10,  # オーバーラップの最大文字数
 )
 docs = text_splitter.split_documents(docs)
+print(docs)
 
 import langchain.vectorstores
 import langchain.embeddings
