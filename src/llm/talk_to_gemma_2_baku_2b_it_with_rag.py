@@ -28,6 +28,9 @@ if __name__ == '__main__':
         dtype=dtype
     )
 
+    #--------------------------------------------------------------------------
+    # 通常の生成
+    #--------------------------------------------------------------------------
     # プロンプトを作成
     prompt = llm.generate_prompt()
 
@@ -35,10 +38,13 @@ if __name__ == '__main__':
     chain = llm.make_chain(prompt=prompt)
 
     # 回答を生成
-    answer = llm.response(chain=chain, query="トポロジー最適化の代表的な手法とは？")
+    answer = llm.response(chain=chain, query="応力制約の方法について説明してください。")
     print(answer)
 
 
+    #-------------------------------------------------------------------------
+    # RAGを使った生成
+    #-------------------------------------------------------------------------
     print("\nWith RAG")
 
     # プロンプトを作成
@@ -48,7 +54,7 @@ if __name__ == '__main__':
     chain_rag = llm.make_chain(prompt=prompt_rag)
 
     # インデックスのパス
-    index_path = "../../database/storage"
+    index_path = "../../database/topology_optimization_database"
 
     # 埋め込みモデルの読み込み
     embedding_model = HuggingFaceEmbeddings(
@@ -63,6 +69,6 @@ if __name__ == '__main__':
     )
 
     # 回答を生成
-    query = "トポロジー最適化の代表的な手法とは？"
+    query = "応力制約の方法について説明してください。"
     answer_rag = llm.response_with_rag(chain=chain_rag, vector_db=index, query=query)
     print(answer_rag)
